@@ -1,0 +1,26 @@
+###Backend
+Database user = admin
+Database password = 1234
+
+cluster name = Espada
+Database name = Kalesh
+Collection name = Users
+
+
+###Snippets
+
+#postMan Api
+{
+    "name":"Ansh",
+    "email":"ansh@chat.app",
+    "password":"1234"
+}
+
+## IDS
+
+Ansh        67482c5f995a59e2c29e0882
+Varinder    67482e68995a59e2c29e088d
+Deepika     67482e71995a59e2c29e0890
+Anushka     67482e7d995a59e2c29e0893
+Manshu      67482c9c995a59e2c29e0885
+
