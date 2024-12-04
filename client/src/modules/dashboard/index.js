@@ -1,47 +1,24 @@
-import React, { useEffect } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle } from 'react'
 import { useState } from "react";
 import SassyAvatar from '../../assets/SassyAvatar.svg'
 import f3 from '../../assets/Friend-3.svg'
+import { socket } from "../../socket"
 
-const Dashboard = () => {
+const Dashboard = forwardRef((props,ref) => {
     // eslint-disable-next-line no-unused-vars
-    const [user, setuser] = useState(JSON.parse(localStorage.getItem('user:detail')));
-    const [conversations, setConversations] = useState([]);
-    const [mess, setmess] = useState({});
-    const [people, setpeople] = useState([]);
-    const [message, setmessage] = useState('');
-
-    useEffect(() => {
-        const Usrdata = JSON.parse(localStorage.getItem('user:detail'));
-        const fetchConvo = async () => {
-            const response = await fetch(`http://localhost:8000/api/conversation/${Usrdata.id}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-
-            });
-            const data = await response.json();
-            // console.log('data :>>', data);
-            setConversations(data);
+    const [user, setuser] = useState();
+    const [conversations, setConversations] = useState();
+    const [mess, setmess] = useState();
+    const [people, setpeople] = useState();
+    const [message, setmessage] = useState();
+    const [receiver, setReceiver] = useState()
+    const onMessage = (message) => {
+        const newMessage = {
+            message: message.text,
+            sender: message.sender,
         }
-        fetchConvo();
-    }, [])
-
-    useEffect(() => {
-        const fetchPeople = async () => {
-            const response = await fetch(`http://localhost:8000/api/users/${user?.id}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const resData = await response.json();
-            setpeople(resData)
-        }
-        fetchPeople()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        setmess({ message: [...mess.message, newMessage], fool: message.receiver, gallan: message.conversation_id });
+    }
 
     const GetMessage = async (conversationId, fool) => {
         const response = await fetch(`http://localhost:8000/api/message/${conversationId}?senderID=${user.id}&&ReceiverId=${fool?.ReceiverId}`,
@@ -53,8 +30,7 @@ const Dashboard = () => {
                 },
             });
         const data = await response.json();
-        console.log('data :>>', data);
-        setmess({ massage: data, fool, gallan: conversationId });
+        setmess({ message: data, fool, gallan: conversationId });
     }
 
 
@@ -72,35 +48,89 @@ const Dashboard = () => {
                 ReceiverId: mess?.fool?.ReceiverId
             })
         });
-
-        // const data = await response.json();
-        // console.log('Message Sent Successfully :>>', data);
-        setmessage('')
+        socket.emit('send-message', { 
+            conversation_id: mess?.gallan, 
+            text: message, 
+            sender: {
+                email: user.email,
+                id: user.id,
+                name: user.name
+            },
+            receiver: mess?.fool,
+            id: Date.now()
+        });
     }
 
+    useEffect(() => {
+        if(user&&people&&!conversations){
+            const fetchConvo = async () => {
+                const response = await fetch(`http://localhost:8000/api/conversation/${user.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+    
+                });
+                const data = await response.json();
+                setConversations(data);
+            }
+            fetchConvo();
+        }
+    })
 
+    useEffect(() => {
+        if(user && !people){
+            const fetchPeople = async () => {
+                const response = await fetch(`http://localhost:8000/api/users/${user.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const resData = await response.json();
+                setpeople(resData)
+            }
+            fetchPeople()
+        }
+    })
+
+    useEffect(()=>{
+        if(!user){
+            setuser(JSON.parse(localStorage.getItem('user:detail')));
+        }
+    })
+
+    useImperativeHandle(ref,()=>({
+        mess:mess,
+        onMessage:onMessage
+    }))
 
     return (
         <div className='w-screen  flex '>
             <div className='w-[25%] h-screen overflow-auto bg-r-primary'>
                 <div className='flex justify-center items-center mt-5 my-5 '>
                     <img src={SassyAvatar} alt='icon' width={75} className='border-l rounded-full ' />
-                    <div className='ml-1'>
-                        <h3 className='text-2xl font-extrabold'>{user.name}</h3>
-                        <p className='text-lg font-light'>My Account </p>
-                    </div>
+                    {
+                        user?
+                        <div className='ml-1'>
+                            <h3 className='text-2xl font-extrabold'>{user.name}</h3>
+                            <p className='text-lg font-light'>My Account </p>
+                        </div>:
+                        <></>
+                    }
                 </div>
                 <hr />
                 <div className=''>
                     <div className='text-2xl font-extrabold text-center'>Messages</div>
                     <div className='mt-4'>
                         {
-                            conversations.length > 0 ?
-                                conversations.map(({ conversationId, child }) => {
+                            conversations?
+                                conversations.map(({ conversationId, child },index) => {
                                     return (
-                                        <div className='flex justify-start items-center cursor-pointer mt-4 ml-2' onClick={() => {
-                                            GetMessage(conversationId, child);
-                                        }}>
+                                        <div key={index}
+                                            className='flex justify-start items-center cursor-pointer mt-4 ml-2' onClick={() => {
+                                                GetMessage(conversationId, child);
+                                            }}>
                                             <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full ${"img" === f3 ? 'bg-white' : 'bg-r-secondary'}`} /></div>
                                             <div className='ml-5'>
                                                 <h3 className='text-lg font-semibold'>{child?.name}</h3>
@@ -140,18 +170,11 @@ const Dashboard = () => {
 
                 <div className='h-[75%] w-full overflow-y-auto'>
                     <div className=' px-5 py-5'>
-                        {/* <div className='max-w-[45%] bg-primary rounded-b-xl rounded-tr-xl px-2 py-2 text-lg font-medium'>
-                            Hello Didi.
-                        </div>
-                        <div className='max-w-[45%] bg-r-secondary rounded-b-xl rounded-tl-xl ml-auto text-lg font-medium p-2 py-2 text-right items-center'>
-                            O han vyi Kiddaan
-                        </div> */}
-
                         {
-                            mess?.massage?.length > 0 ?
-                                mess.massage.map(({ message, sender: { id } = {} }) => {
+                            mess?.message?.length > 0 ?
+                                mess.message.map(({ message, sender: { id } = {} },index) => {
                                     return (
-                                        <div className={`max-w-[45%] rounded-b-xl text-lg font-medium px-2 py-2 items-center my-1 ${id === user?.id ? 'bg-r-secondary rounded-tl-xl ml-auto text-right text-white' : 'bg-primary rounded-tr-xl'}`}>{message}</div>
+                                        <div key={index} className={`max-w-[45%] rounded-b-xl text-lg font-medium px-2 py-2 items-center my-1 ${id === user?.id ? 'bg-r-secondary rounded-tl-xl ml-auto text-right text-white' : 'bg-primary rounded-tr-xl'}`}>{message}</div>
                                     )
                                 }) : mess?.fool?.name ? <div className='text-center text-primary text-lg font-bold '>No Messages</div> : <div className='text-center text-primary text-lg font-bold my-[10%]'>No Conversation Selected</div>
                         }
@@ -165,7 +188,10 @@ const Dashboard = () => {
                         <div >
                             <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#dda15e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-paperclip cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
                         </div>
-                        <div className={`cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary ${!message ? 'pointer-events-none' : ""}`} onClick={() => sendMessage()}>
+                        <div className={`cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary ${!message ? 'pointer-events-none' : ""}`} 
+                            onClick={() => {
+                                sendMessage()
+                            }}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#dda15e" stroke='none' strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-send-2 cursor-pointer"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4.698 4.034l16.302 7.966l-16.302 7.966a.503 .503 0 0 1 -.546 -.124a.555 .555 0 0 1 -.12 -.568l2.468 -7.274l-2.468 -7.274a.555 .555 0 0 1 .12 -.568a.503 .503 0 0 1 .546 -.124z" /><path d="M6.5 12h14.5" /></svg>
                         </div>
                     </div>
@@ -175,12 +201,14 @@ const Dashboard = () => {
             <div className='w-[25%] border bg-r-primary'>
                 <div className='p-5 text-lg font-bold'>Peoples</div>
                 {
-                    people.length > 0 ?
-                        people.map(({ userId, user }) => {
+                    people?
+                        people.map(({ userId, user },index) => {
                             return (
-                                <div className='flex justify-start items-center cursor-pointer mt-4 ml-2' onClick={() => {
-                                    GetMessage('new', user);
-                                }}>
+                                <div key={index}
+                                    className='flex justify-start items-center cursor-pointer mt-4 ml-2' 
+                                    onClick={() => {
+                                        GetMessage('new', user);
+                                    }}>
                                     <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full ${"img" === f3 ? 'bg-white' : 'bg-r-secondary'}`} /></div>
                                     <div className='ml-5'>
                                         <h3 className='text-lg font-semibold'>{user?.name}</h3>
@@ -193,6 +221,6 @@ const Dashboard = () => {
             </div>
         </div>
     )
-}
+})
 
 export default Dashboard
