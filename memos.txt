@@ -24,3 +24,4 @@ Deepika     67482e71995a59e2c29e0890
 Anushka     67482e7d995a59e2c29e0893
 Manshu      67482c9c995a59e2c29e0885
 
+onKeyDown={(e) => { if (e.key === 'Enter' && message.trim() !== '') {sendMessage();}}}

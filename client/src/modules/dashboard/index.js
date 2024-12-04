@@ -1,7 +1,7 @@
-import React, { forwardRef, useEffect, useImperativeHandle } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { useState } from "react";
-import SassyAvatar from '../../assets/SassyAvatar.svg'
-import f3 from '../../assets/Friend-3.svg'
+import SassyAvatar from '../../assets/general.svg'
+import f3 from '../../assets/general.svg'
 import { socket } from "../../socket"
 
 const Dashboard = forwardRef((props,ref) => {
@@ -11,7 +11,11 @@ const Dashboard = forwardRef((props,ref) => {
     const [mess, setmess] = useState();
     const [people, setpeople] = useState();
     const [message, setmessage] = useState();
+    // eslint-disable-next-line no-unused-vars
     const [receiver, setReceiver] = useState()
+
+    const chatEndRef = useRef(null);
+
     const onMessage = (message) => {
         const newMessage = {
             message: message.text,
@@ -98,18 +102,27 @@ const Dashboard = forwardRef((props,ref) => {
         if(!user){
             setuser(JSON.parse(localStorage.getItem('user:detail')));
         }
-    })
+    }, [user])
 
     useImperativeHandle(ref,()=>({
         mess:mess,
         onMessage:onMessage
     }))
 
+    const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [mess?.message]);
+    
+
     return (
         <div className='w-screen  flex '>
             <div className='w-[25%] h-screen overflow-auto bg-r-primary'>
-                <div className='flex justify-center items-center mt-5 my-5 '>
-                    <img src={SassyAvatar} alt='icon' width={75} className='border-l rounded-full ' />
+                <div className='flex justify-center items-center mt-5 my-5 overflow-scroll'>
+                    <img src={SassyAvatar} alt='icon' width={75} className='border-l border-t rounded-full ' />
                     {
                         user?
                         <div className='ml-1'>
@@ -131,7 +144,7 @@ const Dashboard = forwardRef((props,ref) => {
                                             className='flex justify-start items-center cursor-pointer mt-4 ml-2' onClick={() => {
                                                 GetMessage(conversationId, child);
                                             }}>
-                                            <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full ${"img" === f3 ? 'bg-white' : 'bg-r-secondary'}`} /></div>
+                                            <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full `} /></div>
                                             <div className='ml-5'>
                                                 <h3 className='text-lg font-semibold'>{child?.name}</h3>
                                                 <p className='text-sm font-light '>{child?.email} </p>
@@ -177,14 +190,16 @@ const Dashboard = forwardRef((props,ref) => {
                                         <div key={index} className={`max-w-[45%] rounded-b-xl text-lg font-medium px-2 py-2 items-center my-1 ${id === user?.id ? 'bg-r-secondary rounded-tl-xl ml-auto text-right text-white' : 'bg-primary rounded-tr-xl'}`}>{message}</div>
                                     )
                                 }) : mess?.fool?.name ? <div className='text-center text-primary text-lg font-bold '>No Messages</div> : <div className='text-center text-primary text-lg font-bold my-[10%]'>No Conversation Selected</div>
+                                
                         }
+                        <div ref={chatEndRef}></div>
                     </div>
                 </div>
                 {
                     mess?.fool?.name &&
 
                     <div className='w-[100%] p-14 flex items-center'>
-                        <input type='text' placeholder='Type a message...' value={message} onChange={(e) => { setmessage(e.target.value) }} className='rounded-full w-full bg-transparent min-h-15 p-4 font-semibold text-white shadow-lg shadow-r-primary focus:ring-0 outline-none'></input>
+                        <input type='text' placeholder='Type a message...' value={message} onChange={(e) => { setmessage(e.target.value) }} onKeyDown={(e) => { if (e.key === 'Enter' && message.trim() !== '') {sendMessage(); setmessage('');}}} className='rounded-full w-full bg-transparent min-h-15 p-4 font-semibold text-white shadow-lg shadow-r-primary focus:ring-0 outline-none'></input>
                         <div >
                             <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#dda15e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-paperclip cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
                         </div>

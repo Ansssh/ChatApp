@@ -136,7 +136,7 @@ app.get('/api/conversation/:userID', async (req, res) => {
 app.post('/api/message', async (req, res) => {
     try {
         const { ConvoID, SenderID, Message, ReceiverId = '' } = req.body;
-        console.log({ ConvoID, SenderID, Message, ReceiverId })
+        // console.log({ ConvoID, SenderID, Message, ReceiverId })
         if (!SenderID || !Message) {
             return res.status(400).json({ error: 'All fields are required' });
         }
