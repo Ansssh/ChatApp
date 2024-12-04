@@ -4,7 +4,7 @@ import SassyAvatar from '../../assets/general.svg'
 import f3 from '../../assets/general.svg'
 import { socket } from "../../socket"
 
-const Dashboard = forwardRef((props,ref) => {
+const Dashboard = forwardRef((props, ref) => {
     // eslint-disable-next-line no-unused-vars
     const [user, setuser] = useState();
     const [conversations, setConversations] = useState();
@@ -52,9 +52,9 @@ const Dashboard = forwardRef((props,ref) => {
                 ReceiverId: mess?.fool?.ReceiverId
             })
         });
-        socket.emit('send-message', { 
-            conversation_id: mess?.gallan, 
-            text: message, 
+        socket.emit('send-message', {
+            conversation_id: mess?.gallan,
+            text: message,
             sender: {
                 email: user.email,
                 id: user.id,
@@ -66,14 +66,14 @@ const Dashboard = forwardRef((props,ref) => {
     }
 
     useEffect(() => {
-        if(user&&people&&!conversations){
+        if (user && people && !conversations) {
             const fetchConvo = async () => {
                 const response = await fetch(`http://localhost:8000/api/conversation/${user.id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-    
+
                 });
                 const data = await response.json();
                 setConversations(data);
@@ -83,7 +83,7 @@ const Dashboard = forwardRef((props,ref) => {
     })
 
     useEffect(() => {
-        if(user && !people){
+        if (user && !people) {
             const fetchPeople = async () => {
                 const response = await fetch(`http://localhost:8000/api/users/${user.id}`, {
                     method: 'GET',
@@ -98,15 +98,15 @@ const Dashboard = forwardRef((props,ref) => {
         }
     })
 
-    useEffect(()=>{
-        if(!user){
+    useEffect(() => {
+        if (!user) {
             setuser(JSON.parse(localStorage.getItem('user:detail')));
         }
     }, [user])
 
-    useImperativeHandle(ref,()=>({
-        mess:mess,
-        onMessage:onMessage
+    useImperativeHandle(ref, () => ({
+        mess: mess,
+        onMessage: onMessage
     }))
 
     const scrollToBottom = () => {
@@ -116,20 +116,27 @@ const Dashboard = forwardRef((props,ref) => {
     useEffect(() => {
         scrollToBottom();
     }, [mess?.message]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('user:detail'); // Clear stored user data
+        setuser(null); // Reset the user state
+        window.location.href = '/user/sign_in'; // Redirect to the login page (adjust path if needed)
+    };
     
+
 
     return (
         <div className='w-screen  flex '>
             <div className='w-[25%] h-screen overflow-auto bg-r-primary'>
                 <div className='flex justify-center items-center mt-5 my-5 overflow-scroll'>
-                    <img src={SassyAvatar} alt='icon' width={75} className='border-l border-t rounded-full ' />
+                    <img src={SassyAvatar} alt='icon' width={75} className='border-l border-t rounded-full cursor-not-allowed'onClick={handleLogout} />
                     {
-                        user?
-                        <div className='ml-1'>
-                            <h3 className='text-2xl font-extrabold'>{user.name}</h3>
-                            <p className='text-lg font-light'>My Account </p>
-                        </div>:
-                        <></>
+                        user ?
+                            <div className='ml-1'>
+                                <h3 className='text-2xl font-extrabold'>{user.name}</h3>
+                                <p className='text-lg font-light'>My Account </p>
+                            </div> :
+                            <></>
                     }
                 </div>
                 <hr />
@@ -137,8 +144,8 @@ const Dashboard = forwardRef((props,ref) => {
                     <div className='text-2xl font-extrabold text-center'>Messages</div>
                     <div className='mt-4'>
                         {
-                            conversations?
-                                conversations.map(({ conversationId, child },index) => {
+                            conversations ?
+                                conversations.map(({ conversationId, child }, index) => {
                                     return (
                                         <div key={index}
                                             className='flex justify-start items-center cursor-pointer mt-4 ml-2' onClick={() => {
@@ -185,12 +192,12 @@ const Dashboard = forwardRef((props,ref) => {
                     <div className=' px-5 py-5'>
                         {
                             mess?.message?.length > 0 ?
-                                mess.message.map(({ message, sender: { id } = {} },index) => {
+                                mess.message.map(({ message, sender: { id } = {} }, index) => {
                                     return (
                                         <div key={index} className={`max-w-[45%] rounded-b-xl text-lg font-medium px-2 py-2 items-center my-1 ${id === user?.id ? 'bg-r-secondary rounded-tl-xl ml-auto text-right text-white' : 'bg-primary rounded-tr-xl'}`}>{message}</div>
                                     )
                                 }) : mess?.fool?.name ? <div className='text-center text-primary text-lg font-bold '>No Messages</div> : <div className='text-center text-primary text-lg font-bold my-[10%]'>No Conversation Selected</div>
-                                
+
                         }
                         <div ref={chatEndRef}></div>
                     </div>
@@ -199,11 +206,11 @@ const Dashboard = forwardRef((props,ref) => {
                     mess?.fool?.name &&
 
                     <div className='w-[100%] p-14 flex items-center'>
-                        <input type='text' placeholder='Type a message...' value={message} onChange={(e) => { setmessage(e.target.value) }} onKeyDown={(e) => { if (e.key === 'Enter' && message.trim() !== '') {sendMessage(); setmessage('');}}} className='rounded-full w-full bg-transparent min-h-15 p-4 font-semibold text-white shadow-lg shadow-r-primary focus:ring-0 outline-none'></input>
+                        <input type='text' placeholder='Type a message...' value={message} onChange={(e) => { setmessage(e.target.value) }} onKeyDown={(e) => { if (e.key === 'Enter' && message.trim() !== '') { sendMessage(); setmessage(''); } }} className='rounded-full w-full bg-transparent min-h-15 p-4 font-semibold text-white shadow-lg shadow-r-primary focus:ring-0 outline-none'></input>
                         <div >
                             <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#dda15e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-paperclip cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
                         </div>
-                        <div className={`cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary ${!message ? 'pointer-events-none' : ""}`} 
+                        <div className={`cursor-pointer ml-3 p-[5px] rounded-full shadow shadow-r-secondary ${!message ? 'pointer-events-none' : ""}`}
                             onClick={() => {
                                 sendMessage()
                             }}>
@@ -216,11 +223,11 @@ const Dashboard = forwardRef((props,ref) => {
             <div className='w-[25%] border bg-r-primary'>
                 <div className='p-5 text-lg font-bold'>Peoples</div>
                 {
-                    people?
-                        people.map(({ userId, user },index) => {
+                    people ?
+                        people.map(({ userId, user }, index) => {
                             return (
                                 <div key={index}
-                                    className='flex justify-start items-center cursor-pointer mt-4 ml-2' 
+                                    className='flex justify-start items-center cursor-pointer mt-4 ml-2'
                                     onClick={() => {
                                         GetMessage('new', user);
                                     }}>
