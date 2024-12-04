@@ -218,7 +218,7 @@ io.on('connection', (socket) => { // socket object may be used to send specific 
     console.log('new client connected');
     socket.emit('connection', null);
     socket.on('channel-join', id => {
-        console.log('channel join', id);
+        // console.log('channel join', id);
         STATIC_CHANNELS.forEach(c => {
             if (c.id === id) {
                 if (c.sockets.indexOf(socket.id) == (-1)) {
@@ -239,7 +239,7 @@ io.on('connection', (socket) => { // socket object may be used to send specific 
         return id;
     });
     socket.on('send-message', message => {
-        console.log('-----sendMessage------', message);
+        // console.log('-----sendMessage------', message);
         io.emit('message', message);
     });
 
