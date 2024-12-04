@@ -224,7 +224,7 @@ const Dashboard = forwardRef((props,ref) => {
                                     onClick={() => {
                                         GetMessage('new', user);
                                     }}>
-                                    <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full ${"img" === f3 ? 'bg-white' : 'bg-r-secondary'}`} /></div>
+                                    <div><img src={f3} alt='icon' width={75} className={`border-l rounded-full `} /></div>
                                     <div className='ml-5'>
                                         <h3 className='text-lg font-semibold'>{user?.name}</h3>
                                         <p className='text-sm font-light '>{user?.email} </p>
